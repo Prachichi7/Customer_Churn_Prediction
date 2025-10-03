@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churn Prediction Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(45deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(233, 69, 96, 0.15) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(52, 172, 224, 0.12) 0%, transparent 70%);
+            bottom: -100px;
+            left: -100px;
+            border-radius: 50%;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-30px) translateX(30px); }
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #e94560 0%, #34a4e0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.8;
+            color: #b4b4b4;
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 30px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(52, 164, 224, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .form-section:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(233, 69, 96, 0.2);
+            border-color: rgba(233, 69, 96, 0.3);
+        }
+
+        .form-section:hover::before {
+            opacity: 1;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #e94560;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+            position: relative;
+            z-index: 1;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+            transition: color 0.3s ease;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            color: #ffffff;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 45px;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #ffffff;
+            padding: 10px;
+        }
+
+        select option[value="Yes"] {
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
+        }
+
+        select option[value="No"] {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+            box-shadow: 0 0 0 4px rgba(233, 69, 96, 0.15);
+            transform: translateY(-2px);
+        }
+
+        input:hover, select:hover {
+            border-color: rgba(233, 69, 96, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .predict-button {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #e94560 0%, #c72c4a 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 15px 35px rgba(233, 69, 96, 0.4);
+            margin-top: 10px;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .predict-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .predict-button:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .predict-button:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(233, 69, 96, 0.6);
+        }
+
+        .predict-button:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(52, 211, 153, 0.15);
+            backdrop-filter: blur(10px);
+            color: #34d399;
+            border: 2px solid rgba(52, 211, 153, 0.3);
+            border-radius: 20px;
+            font-size: 1.4em;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(52, 211, 153, 0.2);
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-card {
+                padding: 30px 20px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-section {
+                padding: 20px;
+            }
+        }
+
+        /* Custom styling for select dropdown appearance */
+        select::-ms-expand {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>Customer Churn Prediction</h1>
+            <p>Advanced analytics for customer retention insights</p>
+        </div>
+
+        <div class="main-card">
+            <form action="/predict" method="post">
+                <div class="form-grid">
+                    <!-- Financial Metrics -->
+                    <div class="form-section">
+                        <div class="section-title">Financial Metrics</div>
+                        
+                        <div class="form-group">
+                            <label>Tenure (months)</label>
+                            <input type="number" step="0.1" name="Tenure" required placeholder="Enter tenure">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Monthly Charges</label>
+                            <input type="number" step="0.1" name="MonthlyCharges" required placeholder="Enter monthly charges">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Total Charges</label>
+                            <input type="number" step="0.1" name="TotalCharges" required placeholder="Enter total charges">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tenure Group</label>
+                            <select name="TenureGroup">
+                                <option value="1-2">1-2 years</option>
+                                <option value="2-3">2-3 years</option>
+                                <option value="3-4">3-4 years</option>
+                                <option value="4-6">4-6 years</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Customer Demographics -->
+                    <div class="form-section">
+                        <div class="section-title">Demographics</div>
+                        
+                        <div class="form-group">
+                            <label>Senior Citizen</label>
+                            <select name="SeniorCitizen">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Partner</label>
+                            <select name="Partner">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Dependents</label>
+                            <select name="Dependents">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Phone Services -->
+                    <div class="form-section">
+                        <div class="section-title">Phone Services</div>
+                        
+                        <div class="form-group">
+                            <label>Phone Service</label>
+                            <select name="PhoneService">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Multiple Lines</label>
+                            <select name="MultipleLines">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No phone service">No phone service</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Internet Services -->
+                    <div class="form-section">
+                        <div class="section-title">Internet Services</div>
+                        
+                        <div class="form-group">
+                            <label>Internet Service</label>
+                            <select name="InternetService">
+                                <option value="DSL">DSL</option>
+                                <option value="Fiber optic">Fiber optic</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Online Security</label>
+                            <select name="OnlineSecurity">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No internet service">No internet service</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Online Backup</label>
+                            <select name="OnlineBackup">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No internet service">No internet service</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Device Protection</label>
+                            <select name="DeviceProtection">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No internet service">No internet service</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tech Support</label>
+                            <select name="TechSupport">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No internet service">No internet service</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Streaming Services -->
+                    <div class="form-section">
+                        <div class="section-title">Streaming</div>
+                        
+                        <div class="form-group">
+                            <label>Streaming TV</label>
+                            <select name="StreamingTV">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No internet service">No internet service</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Streaming Movies</label>
+                            <select name="StreamingMovies">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No internet service">No internet service</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Billing & Payment -->
+                    <div class="form-section">
+                        <div class="section-title">Billing & Payment</div>
+                        
+                        <div class="form-group">
+                            <label>Contract</label>
+                            <select name="Contract">
+                                <option value="Month-to-month">Month-to-month</option>
+                                <option value="One year">One year</option>
+                                <option value="Two year">Two year</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Paperless Billing</label>
+                            <select name="PaperlessBilling">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <select name="PaymentMethod">
+                                <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                                <option value="Credit card (automatic)">Credit card (automatic)</option>
+                                <option value="Electronic check">Electronic check</option>
+                                <option value="Mailed check">Mailed check</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="predict-button">
+                    Predict Churn
+                </button>
+            </form>
+
+            {% if prediction_text %}
+                <div class="result">{{ prediction_text }}</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
